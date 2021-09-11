@@ -23,6 +23,8 @@ func main() {
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
+
+
 	c := pb.NewUrlShortenerClient(conn)
 
 
@@ -36,9 +38,10 @@ func main() {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	r, err := c.Create(ctx, &pb.UrlRequest{UrlReq: url})
+	//r, err := c.Create(ctx, &pb.UrlRequest{UrlReq: url})
+	r, err := c.Create(ctx, &pb.Url{LongUrl: url})
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}
-	log.Printf("Greeting: %s", r.GetUrlResp())
+	log.Printf("Greeting: %s", r.GetShortUrl())
 }

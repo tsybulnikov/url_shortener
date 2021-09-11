@@ -40,9 +40,9 @@ type server struct {
 	pb.UnimplementedUrlShortenerServer
 }
 
-// GenerateShortUrl implements proto.UrlShortenerServer
-func (s *server) GenerateShortUrl(ctx context.Context, in *pb.UrlRequest) (*pb.UrlResponse, error) {
-	log.Printf("Received: %v", in.GetUrlReq())
+// Create implements proto.UrlShortenerServer
+func (s *server) Create(ctx context.Context, in *pb.Url) (*pb.ShortUrl, error) {
+	log.Printf("Received: %v", in.GetLongUrl())
 	link := "n.ts/"
 	result := ""
 	rand.Seed(time.Now().UnixNano())
@@ -52,7 +52,7 @@ func (s *server) GenerateShortUrl(ctx context.Context, in *pb.UrlRequest) (*pb.U
 		result = result + string(passwordSymbols[rand.Intn(len(passwordSymbols))])
 	}
 	fmt.Printf("%s%s",link,result)
-	return &pb.UrlResponse{UrlResp: "Short URL: " + link + result}, nil
+	return &pb.ShortUrl{ShortUrl: "Short URL: " + link + result}, nil
 	//return &pb.UrlResponse{UrlResp: "Short URL: " + in.GetUrlReq()}, nil
 }
 

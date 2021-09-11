@@ -18,7 +18,8 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type UrlShortenerClient interface {
-	Create(ctx context.Context, in *UrlRequest, opts ...grpc.CallOption) (*UrlResponse, error)
+	Create(ctx context.Context, in *Url, opts ...grpc.CallOption) (*ShortUrl, error)
+	Get(ctx context.Context, in *ShortUrl, opts ...grpc.CallOption) (*Url, error)
 }
 
 type urlShortenerClient struct {
@@ -29,9 +30,18 @@ func NewUrlShortenerClient(cc grpc.ClientConnInterface) UrlShortenerClient {
 	return &urlShortenerClient{cc}
 }
 
-func (c *urlShortenerClient) Create(ctx context.Context, in *UrlRequest, opts ...grpc.CallOption) (*UrlResponse, error) {
-	out := new(UrlResponse)
+func (c *urlShortenerClient) Create(ctx context.Context, in *Url, opts ...grpc.CallOption) (*ShortUrl, error) {
+	out := new(ShortUrl)
 	err := c.cc.Invoke(ctx, "/ozonproject.UrlShortener/Create", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *urlShortenerClient) Get(ctx context.Context, in *ShortUrl, opts ...grpc.CallOption) (*Url, error) {
+	out := new(Url)
+	err := c.cc.Invoke(ctx, "/ozonproject.UrlShortener/Get", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +52,8 @@ func (c *urlShortenerClient) Create(ctx context.Context, in *UrlRequest, opts ..
 // All implementations must embed UnimplementedUrlShortenerServer
 // for forward compatibility
 type UrlShortenerServer interface {
-	Create(context.Context, *UrlRequest) (*UrlResponse, error)
+	Create(context.Context, *Url) (*ShortUrl, error)
+	Get(context.Context, *ShortUrl) (*Url, error)
 	mustEmbedUnimplementedUrlShortenerServer()
 }
 
@@ -50,8 +61,11 @@ type UrlShortenerServer interface {
 type UnimplementedUrlShortenerServer struct {
 }
 
-func (UnimplementedUrlShortenerServer) Create(context.Context, *UrlRequest) (*UrlResponse, error) {
+func (UnimplementedUrlShortenerServer) Create(context.Context, *Url) (*ShortUrl, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
+}
+func (UnimplementedUrlShortenerServer) Get(context.Context, *ShortUrl) (*Url, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
 }
 func (UnimplementedUrlShortenerServer) mustEmbedUnimplementedUrlShortenerServer() {}
 
@@ -67,7 +81,7 @@ func RegisterUrlShortenerServer(s grpc.ServiceRegistrar, srv UrlShortenerServer)
 }
 
 func _UrlShortener_Create_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UrlRequest)
+	in := new(Url)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -79,7 +93,25 @@ func _UrlShortener_Create_Handler(srv interface{}, ctx context.Context, dec func
 		FullMethod: "/ozonproject.UrlShortener/Create",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UrlShortenerServer).Create(ctx, req.(*UrlRequest))
+		return srv.(UrlShortenerServer).Create(ctx, req.(*Url))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UrlShortener_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ShortUrl)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UrlShortenerServer).Get(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ozonproject.UrlShortener/Get",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UrlShortenerServer).Get(ctx, req.(*ShortUrl))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -94,6 +126,10 @@ var UrlShortener_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Create",
 			Handler:    _UrlShortener_Create_Handler,
+		},
+		{
+			MethodName: "Get",
+			Handler:    _UrlShortener_Get_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

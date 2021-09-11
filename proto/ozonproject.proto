@@ -5,13 +5,14 @@ option go_package = "/home/tsybulnikov/go/src/ozonProject";
 package ozonproject;
 
 service UrlShortener {
-  rpc Create (UrlRequest) returns (UrlResponse) {}
+  rpc Create (Url) returns (ShortUrl) {}
+  rpc Get (ShortUrl) returns (Url) {}
 }
 
-message UrlRequest {
-  string urlReq = 1;
+message Url {
+  string longUrl = 1;
 }
 
-message UrlResponse {
-  string urlResp = 1;
+message ShortUrl {
+  string shortUrl = 1;
 }
