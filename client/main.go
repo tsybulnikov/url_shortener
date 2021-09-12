@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	address     = "localhost:50051"
+	address = "localhost:50051"
 )
 
 func main() {
@@ -23,26 +23,24 @@ func main() {
 	}
 	defer conn.Close()
 
-
 	c := pb.NewUrlShortenerClient(conn)
 	var answer string
 	fmt.Print("Введите 'CREATE' для получения сокращенного URL или 'GET' для получения оригинального: ")
 	fmt.Scan(&answer)
 	if answer == "CREATE" {
 		CreatingUrl(c)
-	} else if answer == "GET"{
+	} else if answer == "GET" {
 		GettingUrl(c)
-	}else {
+	} else {
 		fmt.Println("неверный ввод, функция не существует")
 	}
 }
 
-func CreatingUrl(c pb.UrlShortenerClient)  {
+func CreatingUrl(c pb.UrlShortenerClient) {
 	var urlIn string
 
 	fmt.Print("Введите URL: ")
 	fmt.Scan(&urlIn)
-
 
 	if len(os.Args) > 1 {
 		urlIn = os.Args[1]
@@ -57,7 +55,7 @@ func CreatingUrl(c pb.UrlShortenerClient)  {
 	log.Printf("Short URL: %s", r.GetShortUrl())
 }
 
-func GettingUrl(c pb.UrlShortenerClient)  {
+func GettingUrl(c pb.UrlShortenerClient) {
 	var urlIn string
 
 	fmt.Print("Введите URL: ")

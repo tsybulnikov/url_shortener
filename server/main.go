@@ -51,14 +51,14 @@ func (s *server) Get(ctx context.Context, in *pb.ShortUrl) (*pb.Url, error) {
 
 func DbUrl(inputUrl string, mode string) string {
 	type url struct {
-		id int
-		longUrl string
+		id       int
+		longUrl  string
 		shortUrl string
 	}
 
 	connStr := "user=tsybulnikov password=31415 dbname=OzonProjectDb sslmode=disable"
 	db, err := sql.Open("postgres", connStr)
-	if err != nil{
+	if err != nil {
 		log.Fatalf("failed to open DB: %v", err)
 	}
 
@@ -85,7 +85,6 @@ func DbUrl(inputUrl string, mode string) string {
 		}
 		return "DB has no this short URL"
 	} else if mode == "create" {
-
 
 		link := "n.ts/"
 		code := ""
