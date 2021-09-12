@@ -1,34 +1,16 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
-
-// Package main implements a server for Greeter service.
 package main
 
 import (
 	"context"
-	"fmt"
+	"database/sql"
+	_ "github.com/lib/pq"
+	"google.golang.org/grpc"
 	"log"
 	"math/rand"
 	"net"
-	"time"
-
-	"google.golang.org/grpc"
+	"net/url"
 	pb "ozonProject/proto"
+	"time"
 )
 
 const (
@@ -43,17 +25,105 @@ type server struct {
 // Create implements proto.UrlShortenerServer
 func (s *server) Create(ctx context.Context, in *pb.Url) (*pb.ShortUrl, error) {
 	log.Printf("Received: %v", in.GetLongUrl())
-	link := "n.ts/"
-	result := ""
-	rand.Seed(time.Now().UnixNano())
-	passwordSymbols := make([]rune, 63, 63)
-	passwordSymbols = []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890_")
-	for i := 1; i <= 7; i++ {
-		result = result + string(passwordSymbols[rand.Intn(len(passwordSymbols))])
+
+	_, err := url.ParseRequestURI(in.GetLongUrl())
+	if err != nil {
+		return &pb.ShortUrl{ShortUrl: "URL is not valid"}, nil
 	}
-	fmt.Printf("%s%s",link,result)
-	return &pb.ShortUrl{ShortUrl: "Short URL: " + link + result}, nil
-	//return &pb.UrlResponse{UrlResp: "Short URL: " + in.GetUrlReq()}, nil
+
+	mode := "create"
+
+	methodResult := DbUrl(in.GetLongUrl(), mode)
+	methodResult = "http://" + methodResult
+	return &pb.ShortUrl{ShortUrl: methodResult}, nil
+
+}
+
+func (s *server) Get(ctx context.Context, in *pb.ShortUrl) (*pb.Url, error) {
+	//log.Printf("Received: %v", in.GetShortUrl())
+
+	mode := "get"
+	methodResult := DbUrl(in.GetShortUrl(), mode)
+
+	return &pb.Url{LongUrl: methodResult}, nil
+
+}
+
+func DbUrl(inputUrl string, mode string) string {
+	type url struct {
+		id int
+		longUrl string
+		shortUrl string
+	}
+
+	connStr := "user=tsybulnikov password=31415 dbname=OzonProjectDb sslmode=disable"
+	db, err := sql.Open("postgres", connStr)
+	if err != nil{
+		log.Fatalf("failed to open DB: %v", err)
+	}
+
+	if mode == "get" {
+		rows, err := db.Query("select * from urls where shortUrl = $1", inputUrl)
+		if err != nil {
+			log.Fatalf("failed to query to DB: %v", err)
+		}
+		defer rows.Close()
+
+		var urls []url
+
+		for rows.Next() {
+			u := url{}
+			err := rows.Scan(&u.id, &u.longUrl, &u.shortUrl)
+			if err != nil {
+				log.Fatalf("failed to scan rows: %v", err)
+			}
+			urls = append(urls, u)
+		}
+
+		for _, u := range urls {
+			return u.longUrl
+		}
+		return "DB has no this short URL"
+	} else {
+		link := "n.ts/"
+		code := ""
+		rand.Seed(time.Now().UnixNano())
+		passwordSymbols := make([]rune, 63, 63)
+		passwordSymbols = []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890_")
+		for i := 1; i <= 5; i++ {
+			code = code + string(passwordSymbols[rand.Intn(len(passwordSymbols))])
+		}
+		result := link + code
+
+		rows, err := db.Query("select * from urls where longUrl = $1", inputUrl)
+		if err != nil {
+			log.Fatalf("failed to query to DB: %v", err)
+		}
+		defer rows.Close()
+
+		var urls []url
+
+		for rows.Next() {
+			u := url{}
+			err := rows.Scan(&u.id, &u.longUrl, &u.shortUrl)
+			if err != nil {
+				log.Fatalf("failed to scan rows: %v", err)
+			}
+			urls = append(urls, u)
+		}
+
+		for _, u := range urls {
+			return u.shortUrl
+		}
+
+		_, err = db.Exec("insert into urls (longUrl, shortUrl) values ($1, $2)", inputUrl,
+			result)
+		if err != nil {
+			log.Fatalf("failed to exec DB: %v", err)
+		}
+		defer db.Close()
+		return result
+	}
 }
 
 func main() {
