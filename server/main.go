@@ -84,7 +84,9 @@ func DbUrl(inputUrl string, mode string) string {
 			return u.longUrl
 		}
 		return "DB has no this short URL"
-	} else {
+	} else if mode == "create" {
+
+
 		link := "n.ts/"
 		code := ""
 		rand.Seed(time.Now().UnixNano())
@@ -124,6 +126,7 @@ func DbUrl(inputUrl string, mode string) string {
 		defer db.Close()
 		return result
 	}
+	return "invalid value for variable \"mode\""
 }
 
 func main() {
